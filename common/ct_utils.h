@@ -30,13 +30,40 @@
  * SOFTWARE.
  */
 #include <time.h>
-/* Timing vars */
+
 static clock_t start, end;
-static atomic_t clock_started;
+static pthread_mutex_t clock_lock;
+static char clock_started, is_clock_lock_init;
+
+
+#define INIT_CLOCK_LOCK if (!is_clock_lock_init) {		       \
+				pthread_mutex_init(&clock_lock, NULL); \
+				is_clock_lock_init = 1;		       \
+			}
+
+#define DEST_CLOCK_LOCK if (is_clock_lock_init) {			\
+				pthread_mutex_destroy(&clock_lock);	\
+				is_clock_lock_init = 0;			\
+			}
 
 /* Useful MACROS */
-#define START_CLOCK atomic_get(clock_started) ? start = start : \
-		start = clock(); atomic_set(clock_started, 1);
-#define STOP_CLOCK  end = clock(); atomic_set(clock_started, 0);
-#define CPU_TIME    end - start;
-#define WALL_CLOCK_TIME CPU_TIME / CLOCKS_PER_SEC;
+#define START_CLOCK INIT_CLOCK_LOCK			   \
+		    if (!pthread_mutex_lock(&clock_lock)) {\
+			if (!clock_started) {		   \
+				start = clock();	   \
+				printf("start = %ld\n", start);\
+				clock_started = 1;	   \
+			}				   \
+		    }					   \
+		    pthread_mutex_unlock(&clock_lock);
+#define STOP_CLOCK if (!pthread_mutex_lock(&clock_lock)) { \
+			if (clock_started) {		   \
+				end = clock();		   \
+				printf("end = %ld\n", end);	\
+				clock_started = 0;	   \
+			}				   \
+		   }					   \
+		   pthread_mutex_unlock(&clock_lock);	   \
+		   DEST_CLOCK_LOCK
+#define CPU_TIME    end - start
+#define WALL_CLOCK_TIME  CPU_TIME / CLOCKS_PER_SEC

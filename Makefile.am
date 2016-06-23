@@ -1,14 +1,14 @@
-AM_CFLAGS = -I$(srcdir)/include
+AM_CFLAGS = -I$(srcdir)/include -I$(srcdir)/common
 ACLOCAL_AMFLAGS = -I config
 
 bin_PROGRAMS = \
-	performance/single-node/dummy
+	performance/single-node/lock_tests
 
-dist_bin_SCRIPTS = \
-	scripts/dummy.sh
+# dist_bin_SCRIPTS = \
+# 	scripts/dummy.sh
 
-performance_single_node_dummy_SOURCES = \
-	performance/single-node/dummy.c
+#performance_single_node_lock_tests_SOURCES = \
+#	performance/single-node/lock_test.c
 
 EXTRA_DIST = \
 	ft_utils.h \
