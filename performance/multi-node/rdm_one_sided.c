@@ -476,17 +476,16 @@ void *thread_fn(void *data)
 	ptd = &thread_data[it.thread_id];
 	ptd->bytes_sent = 0;
 
-        ct_tbarrier(&ptd->tbar);
+        /*ct_tbarrier(&ptd->tbar);*/
 
 	/* this is NOT thread-safe? Start the clock, for each thread, after the
 	 * threads enter */
 	#ifdef GPERF_ENABLED
 	if (tunables.threads > 1) abort();
-	char profileName[256];
+		char profileName[256];
 		sprintf(profileName, "rdm_one_sided-%s-pid%d-tid%d-%d.prof",
 		getenv("HOSTNAME"), myid, it.thread_id, it.message_size);
 		ProfilerStart(profileName);
-	/*printf("%s\n", profileName);*/
 	#endif // GPERF_ENABLED
 
 	if (myid == 0) {
@@ -544,7 +543,7 @@ void *thread_fn(void *data)
 	#ifdef GPERF_ENABLED
 	ProfilerStop();
 	#endif // GPERF_ENABLED
-        ct_tbarrier(&ptd->tbar);
+        /*ct_tbarrier(&ptd->tbar);*/
 
 	ptd->latency = (t_end - t_start) / (double)(loop * window_size);
 	ptd->time_start = t_start;
@@ -701,16 +700,17 @@ int main(int argc, char *argv[])
 		/* threaded section */
 		for (i = 0; i < tunables.threads; i++) {
 			iter_key.thread_id = i;
-			ret = pthread_create(&thread_data[i].thread, NULL,
+			/*ret = pthread_create(&thread_data[i].thread, NULL,
 					thread_fn, iter_key.data);
 			if (ret != 0) {
 				printf("couldn't create thread %i\n", i);
-				pthread_exit(NULL); /* a more robust exit would be nice here */
-			}
+				pthread_exit(NULL); *//* a more robust exit would be nice here *//*
+			}*/
+			thread_fn(iter_key.data);
 		}
 
-		for (i = 0; i < tunables.threads; i++)
-			pthread_join(thread_data[i].thread, NULL);
+		/*for (i = 0; i < tunables.threads; i++)
+			pthread_join(thread_data[i].thread, NULL);*/
 
 		ctpm_Barrier();
 
