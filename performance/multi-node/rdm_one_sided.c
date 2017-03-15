@@ -51,6 +51,10 @@
 #include "ct_utils.h"
 #include "ct_tbarrier.h"
 
+#ifdef GPERF_ENABLED
+#include <gperftools/profiler.h>
+#endif // GPERF_ENABLED
+
 #define MAX_ALIGNMENT 65536
 #define MAX_MSG_SIZE (1<<22)
 #define MYBUFSIZE (MAX_MSG_SIZE + MAX_ALIGNMENT)
@@ -474,6 +478,17 @@ void *thread_fn(void *data)
 
         ct_tbarrier(&ptd->tbar);
 
+	/* this is NOT thread-safe? Start the clock, for each thread, after the
+	 * threads enter */
+	#ifdef GPERF_ENABLED
+	if (tunables.threads > 1) abort();
+	char profileName[256];
+		sprintf(profileName, "rdm_one_sided-%s-pid%d-tid%d-%d.prof",
+		getenv("HOSTNAME"), myid, it.thread_id, it.message_size);
+		ProfilerStart(profileName);
+	/*printf("%s\n", profileName);*/
+	#endif // GPERF_ENABLED
+
 	if (myid == 0) {
 		peer = 1;
 
@@ -525,6 +540,10 @@ void *thread_fn(void *data)
 		wait_for_comp(ptd->scq, 1);
 	}
 
+	/* don't wait for all the threads to finish before stopping the clock */
+	#ifdef GPERF_ENABLED
+	ProfilerStop();
+	#endif // GPERF_ENABLED
         ct_tbarrier(&ptd->tbar);
 
 	ptd->latency = (t_end - t_start) / (double)(loop * window_size);
